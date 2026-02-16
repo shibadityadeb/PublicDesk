@@ -4,7 +4,7 @@
 
 This class diagram illustrates the core entities and their relationships in the PublicDesk system.
 
-![Class Diagram](class.png)
+![Class Diagram](assets/class.png)
 
 ## Key Classes
 
