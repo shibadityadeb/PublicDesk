@@ -157,7 +157,7 @@ export default function RescheduleAppointmentPage() {
                   <label className="text-sm font-medium">Available Time Slots</label>
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     {slots.length > 0 ? (
-                      slots.map((slot) => (
+                      slots.map((slot: string) => (
                         <Button
                           key={slot}
                           variant={selectedTime === slot ? "default" : "outline"}

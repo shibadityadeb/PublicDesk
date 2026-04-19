@@ -138,7 +138,7 @@ export default function GenerateTokenPage() {
                     </div>
                   ) : offices.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {offices.map((office) => (
+                      {offices.map((office: Office) => (
                         <motion.div
                           key={office.id}
                           whileHover={{ scale: 1.02 }}
@@ -183,7 +183,7 @@ export default function GenerateTokenPage() {
                     </div>
                   ) : services.length > 0 ? (
                     <div className="space-y-2">
-                      {services.map((service) => (
+                      {services.map((service: Service) => (
                         <motion.div
                           key={service.id}
                           onClick={() => setSelectedService(service)}
