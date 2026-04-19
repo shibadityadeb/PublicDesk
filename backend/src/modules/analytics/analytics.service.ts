@@ -192,7 +192,7 @@ export class AnalyticsService implements OnModuleInit {
           status,
           priority: Priority.NORMAL,
           notes: 'Mock appointment data',
-          completedAt: status === AppointmentStatus.COMPLETED ? new Date(date.getTime() + 60 * 60 * 1000) : null,
+          completedAt: status === AppointmentStatus.COMPLETED ? new Date(date.getTime() + 60 * 60 * 1000) : undefined,
         });
 
         const tokenStatusPool = [
@@ -213,10 +213,10 @@ export class AnalyticsService implements OnModuleInit {
           officeId: office.id,
           serviceId: service.id,
           estimatedWaitTime: 15,
-          actualWaitTime: tokenStatus === TokenStatus.COMPLETED ? 12 + (tokenCounter % 8) : null,
-          calledAt: tokenStatus === TokenStatus.CALLED ? new Date(date.getTime() + 30 * 60 * 1000) : null,
-          servedAt: tokenStatus === TokenStatus.COMPLETED ? new Date(date.getTime() + 40 * 60 * 1000) : null,
-          completedAt: tokenStatus === TokenStatus.COMPLETED ? new Date(date.getTime() + 55 * 60 * 1000) : null,
+          actualWaitTime: tokenStatus === TokenStatus.COMPLETED ? 12 + (tokenCounter % 8) : undefined,
+          calledAt: tokenStatus === TokenStatus.CALLED ? new Date(date.getTime() + 30 * 60 * 1000) : undefined,
+          servedAt: tokenStatus === TokenStatus.COMPLETED ? new Date(date.getTime() + 40 * 60 * 1000) : undefined,
+          completedAt: tokenStatus === TokenStatus.COMPLETED ? new Date(date.getTime() + 55 * 60 * 1000) : undefined,
         });
 
         appointmentCounter += 1;
