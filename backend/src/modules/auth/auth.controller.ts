@@ -35,7 +35,7 @@ export class AuthController {
   @ApiSwaggerResponse({ status: 409, description: 'User already exists' })
   async register(@Body() registerDto: RegisterDto) {
     const result = await this.authService.register(registerDto);
-    return ApiResponse.success('User registered successfully. Please verify your email.', result);
+    return ApiResponse.success('User registered successfully.', result);
   }
 
   /**

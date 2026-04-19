@@ -46,3 +46,5 @@ lerna-debug.log*
 # Temp files
 *.tmp
 *.temp
+
+graphify-out

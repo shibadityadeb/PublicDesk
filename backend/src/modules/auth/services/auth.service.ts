@@ -66,7 +66,7 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user (email verification disabled)
     const user = this.userRepository.create({
       firstName,
       lastName,
@@ -74,18 +74,14 @@ export class AuthService {
       phone,
       password: hashedPassword,
       role,
-      status: UserStatus.PENDING_VERIFICATION,
-      emailVerified: false,
+      status: UserStatus.ACTIVE,
+      emailVerified: true,
       phoneVerified: false,
     });
 
     await this.userRepository.save(user);
 
-    // Generate OTP for email verification
-    const otp = await this.otpService.createOtp(user, 'EMAIL_VERIFICATION', 'Account verification');
-    await this.otpService.sendOtpEmail(user.email, otp.code, 'Email Verification');
-
-    this.logger.log(`User registered successfully: ${user.email}`, 'AuthService');
+    this.logger.log(`User registered successfully (verification disabled): ${user.email}`, 'AuthService');
 
     // Generate tokens
     const tokens = await this.generateTokens(user);
@@ -150,20 +146,14 @@ export class AuthService {
   /**
    * Verify email with OTP
    */
-  async verifyEmail(userId: string, code: string): Promise<void> {
-    const isValid = await this.otpService.verifyOtp(userId, code, 'EMAIL_VERIFICATION');
-
-    if (!isValid) {
-      throw new BadRequestException('Invalid or expired OTP');
-    }
-
-    // Update user email verification status
+  async verifyEmail(userId: string, _code: string): Promise<void> {
+    // Email verification disabled; mark verified if needed
     await this.userRepository.update(userId, {
       emailVerified: true,
       status: UserStatus.ACTIVE,
     });
 
-    this.logger.log(`Email verified for user: ${userId}`, 'AuthService');
+    this.logger.log(`Email verification bypassed for user: ${userId}`, 'AuthService');
   }
 
   /**
@@ -176,14 +166,8 @@ export class AuthService {
       throw new BadRequestException('User not found');
     }
 
-    if (user.emailVerified) {
-      throw new BadRequestException('Email already verified');
-    }
-
-    const otp = await this.otpService.createOtp(user, 'EMAIL_VERIFICATION', 'Email Verification');
-    await this.otpService.sendOtpEmail(user.email, otp.code, 'Email Verification');
-
-    this.logger.log(`Email OTP resent for user: ${user.email}`, 'AuthService');
+    // Email verification disabled; nothing to resend
+    this.logger.log(`Email OTP resend skipped (verification disabled) for user: ${user.email}`, 'AuthService');
   }
 
   /**

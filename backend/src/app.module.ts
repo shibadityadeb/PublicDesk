@@ -15,9 +15,17 @@ import { rabbitmqConfig } from './config/rabbitmq.config';
 import { LoggerModule } from './common/logger/logger.module';
 import { ExceptionModule } from './common/exceptions/exception.module';
 
-// Import feature modules (will be created)
+// Import feature modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { OfficeModule } from './modules/office/office.module';
+import { ServiceModule } from './modules/service/service.module';
+import { AppointmentModule } from './modules/appointment/appointment.module';
+import { TokenModule } from './modules/token/token.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { GatewaysModule } from './gateways/gateways.module';
 
 /**
  * Root application module
@@ -42,7 +50,7 @@ import { UserModule } from './modules/user/user.module';
         username: configService.get('database.username'),
         password: configService.get('database.password'),
         database: configService.get('database.database'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        autoLoadEntities: true,
         synchronize: configService.get('database.synchronize'),
         logging: configService.get('database.logging'),
         ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
@@ -97,6 +105,14 @@ import { UserModule } from './modules/user/user.module';
     // Feature modules
     AuthModule,
     UserModule,
+    OfficeModule,
+    ServiceModule,
+    AppointmentModule,
+    TokenModule,
+    NotificationModule,
+    AnalyticsModule,
+    AuditModule,
+    GatewaysModule,
   ],
   controllers: [],
   providers: [],
