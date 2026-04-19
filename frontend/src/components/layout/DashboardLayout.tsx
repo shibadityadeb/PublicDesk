@@ -18,48 +18,50 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isAuthenticated, user, hasHydrated } = useAuthStore();
   const { theme } = useAppStore();
 
+  // Profile is accessible to all authenticated roles
+  const COMMON_ROUTES = ["/profile"];
+
   const roleRoutes: Record<UserRole, string[]> = {
     [UserRole.CITIZEN]: [
       "/dashboard",
       "/appointments",
-      "/appointments/book",
       "/tokens",
       "/queue/monitor",
-      "/profile",
+      ...COMMON_ROUTES,
     ],
     [UserRole.OFFICER]: [
       "/dashboard",
       "/queue",
-      "/appointments/office",
-      "/profile",
+      "/appointments",
+      ...COMMON_ROUTES,
     ],
     [UserRole.SUPERVISOR]: [
       "/dashboard",
-      "/queue/monitor",
+      "/queue",
       "/analytics",
       "/appointments",
-      "/profile",
+      ...COMMON_ROUTES,
     ],
     [UserRole.ADMIN]: [
       "/dashboard",
       "/offices",
       "/services",
       "/appointments",
-      "/queue/monitor",
+      "/queue",
       "/users",
       "/analytics",
-      "/profile",
+      ...COMMON_ROUTES,
     ],
     [UserRole.SUPER_ADMIN]: [
       "/dashboard",
       "/offices",
       "/services",
       "/appointments",
-      "/queue/monitor",
+      "/queue",
       "/users",
       "/analytics",
       "/settings",
-      "/profile",
+      ...COMMON_ROUTES,
     ],
   };
 

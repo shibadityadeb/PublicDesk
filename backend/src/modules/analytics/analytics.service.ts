@@ -1,20 +1,250 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { AppLoggerService } from '@common/logger/logger.service';
 import { Token } from '@modules/token/entities/token.entity';
 import { Appointment } from '@modules/appointment/entities/appointment.entity';
-import { TokenStatus, AppointmentStatus } from '@common/enums';
+import { TokenStatus, AppointmentStatus, Priority, UserRole, UserStatus, ServiceStatus, OfficeStatus } from '@common/enums';
+import { Office } from '@modules/office/entities/office.entity';
+import { Service } from '@modules/service/entities/service.entity';
+import { User } from '@modules/user/entities/user.entity';
 
 @Injectable()
-export class AnalyticsService {
+export class AnalyticsService implements OnModuleInit {
   constructor(
     @InjectRepository(Token)
     private readonly tokenRepository: Repository<Token>,
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
+    @InjectRepository(Office)
+    private readonly officeRepository: Repository<Office>,
+    @InjectRepository(Service)
+    private readonly serviceRepository: Repository<Service>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly logger: AppLoggerService,
   ) {}
+
+  async onModuleInit() {
+    await this.seedMockAnalyticsData();
+  }
+
+  private async seedMockAnalyticsData(): Promise<void> {
+    const officeCount = await this.officeRepository.count();
+    if (officeCount === 0) return;
+
+    const serviceCount = await this.serviceRepository.count();
+    if (serviceCount === 0) {
+      const offices = await this.officeRepository.find({ order: { createdAt: 'ASC' } });
+      const templates = [
+        {
+          name: 'Passport Services',
+          description: 'New passport and renewals',
+          category: 'Passport Services',
+          estimatedDuration: 30,
+          maxDailyCapacity: 120,
+          requiresAppointment: true,
+          requiresDocuments: true,
+          documentList: ['ID Proof', 'Address Proof', 'Photos'],
+          fees: 1500,
+        },
+        {
+          name: 'Driving License',
+          description: 'License issuance and renewal',
+          category: 'Driving License',
+          estimatedDuration: 20,
+          maxDailyCapacity: 150,
+          requiresAppointment: true,
+          requiresDocuments: true,
+          documentList: ['ID Proof', 'Test Certificate'],
+          fees: 600,
+        },
+        {
+          name: 'Birth Certificate',
+          description: 'Issue certified birth certificates',
+          category: 'Certificates',
+          estimatedDuration: 15,
+          maxDailyCapacity: 200,
+          requiresAppointment: false,
+          requiresDocuments: true,
+          documentList: ['Hospital Record', 'Parent ID'],
+          fees: 50,
+        },
+        {
+          name: 'Property Tax',
+          description: 'Property tax payment and receipts',
+          category: 'Tax Services',
+          estimatedDuration: 10,
+          maxDailyCapacity: 250,
+          requiresAppointment: false,
+          requiresDocuments: false,
+          fees: 0,
+        },
+      ];
+
+      let counter = 1;
+      const services: Partial<Service>[] = [];
+      for (const office of offices) {
+        for (const t of templates) {
+          services.push({
+            ...t,
+            code: `SVC-${String(counter).padStart(3, '0')}`,
+            officeId: office.id,
+            status: ServiceStatus.ACTIVE,
+          });
+          counter += 1;
+        }
+      }
+
+      await this.serviceRepository.save(services);
+      this.logger.log('Seeded mock services', 'AnalyticsService');
+    }
+
+    const tokenCount = await this.tokenRepository.count();
+    const appointmentCount = await this.appointmentRepository.count();
+    if (tokenCount > 0 || appointmentCount > 0) return;
+
+    const offices = await this.officeRepository.find({ order: { createdAt: 'ASC' } });
+    const services = await this.serviceRepository.find({ order: { createdAt: 'ASC' } });
+
+    if (offices.length === 0 || services.length === 0) return;
+
+    const userCount = await this.userRepository.count();
+    const basePassword = await bcrypt.hash('Password@123', 10);
+    if (userCount === 0) {
+      const users: Partial<User>[] = [
+        {
+          firstName: 'Aarav',
+          lastName: 'Mehta',
+          email: 'aarav.mehta@publicdesk.local',
+          phone: '+919900000001',
+          password: basePassword,
+          role: UserRole.CITIZEN,
+          status: UserStatus.ACTIVE,
+          emailVerified: true,
+          phoneVerified: false,
+        },
+        {
+          firstName: 'Diya',
+          lastName: 'Sharma',
+          email: 'diya.sharma@publicdesk.local',
+          phone: '+919900000002',
+          password: basePassword,
+          role: UserRole.CITIZEN,
+          status: UserStatus.ACTIVE,
+          emailVerified: true,
+          phoneVerified: false,
+        },
+        {
+          firstName: 'Rahul',
+          lastName: 'Singh',
+          email: 'rahul.singh@publicdesk.local',
+          phone: '+919900000003',
+          password: basePassword,
+          role: UserRole.CITIZEN,
+          status: UserStatus.ACTIVE,
+          emailVerified: true,
+          phoneVerified: false,
+        },
+      ];
+
+      await this.userRepository.save(users);
+      this.logger.log('Seeded mock users', 'AnalyticsService');
+    }
+
+    const citizens = await this.userRepository.find({ where: { role: UserRole.CITIZEN } });
+    if (citizens.length === 0) return;
+
+    const now = new Date();
+    const days = [0, 1, 2, 3, 4, 5, 6];
+    const appointments: Partial<Appointment>[] = [];
+    const tokens: Partial<Token>[] = [];
+
+    let appointmentCounter = 1;
+    let tokenCounter = 1;
+
+    for (const offset of days) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - offset);
+      date.setHours(0, 0, 0, 0);
+
+      for (const citizen of citizens) {
+        const office = offices[appointmentCounter % offices.length];
+        const service = services[appointmentCounter % services.length];
+        const scheduledTime = `${9 + (appointmentCounter % 8)}:00`;
+
+        const statusPool = [
+          AppointmentStatus.COMPLETED,
+          AppointmentStatus.SCHEDULED,
+          AppointmentStatus.CANCELLED,
+          AppointmentStatus.IN_PROGRESS,
+        ];
+        const status = statusPool[appointmentCounter % statusPool.length];
+
+        appointments.push({
+          appointmentNumber: `APT-${date.toISOString().slice(0, 10).replace(/-/g, '')}-${String(appointmentCounter).padStart(4, '0')}`,
+          citizenId: citizen.id,
+          serviceId: service.id,
+          officeId: office.id,
+          scheduledDate: date,
+          scheduledTime,
+          status,
+          priority: Priority.NORMAL,
+          notes: 'Mock appointment data',
+          completedAt: status === AppointmentStatus.COMPLETED ? new Date(date.getTime() + 60 * 60 * 1000) : null,
+        });
+
+        const tokenStatusPool = [
+          TokenStatus.COMPLETED,
+          TokenStatus.WAITING,
+          TokenStatus.CANCELLED,
+          TokenStatus.CALLED,
+        ];
+        const tokenStatus = tokenStatusPool[tokenCounter % tokenStatusPool.length];
+
+        tokens.push({
+          tokenNumber: `A-${String(tokenCounter).padStart(3, '0')}`,
+          qrCode: 'data:image/png;base64,MOCK',
+          qrData: JSON.stringify({ token: tokenCounter }),
+          status: tokenStatus,
+          priority: Priority.NORMAL,
+          citizenId: citizen.id,
+          officeId: office.id,
+          serviceId: service.id,
+          estimatedWaitTime: 15,
+          actualWaitTime: tokenStatus === TokenStatus.COMPLETED ? 12 + (tokenCounter % 8) : null,
+          calledAt: tokenStatus === TokenStatus.CALLED ? new Date(date.getTime() + 30 * 60 * 1000) : null,
+          servedAt: tokenStatus === TokenStatus.COMPLETED ? new Date(date.getTime() + 40 * 60 * 1000) : null,
+          completedAt: tokenStatus === TokenStatus.COMPLETED ? new Date(date.getTime() + 55 * 60 * 1000) : null,
+        });
+
+        appointmentCounter += 1;
+        tokenCounter += 1;
+      }
+    }
+
+    const savedAppointments = await this.appointmentRepository.save(appointments);
+    const savedTokens = await this.tokenRepository.save(tokens);
+
+    for (let i = 0; i < savedTokens.length; i += 1) {
+      const dateOffset = Math.floor(i / citizens.length);
+      const createdAt = new Date(now);
+      createdAt.setDate(now.getDate() - dateOffset);
+      createdAt.setHours(9 + (i % 8), 0, 0, 0);
+      await this.tokenRepository.update(savedTokens[i].id, { createdAt });
+    }
+
+    for (let i = 0; i < savedAppointments.length; i += 1) {
+      const dateOffset = Math.floor(i / citizens.length);
+      const createdAt = new Date(now);
+      createdAt.setDate(now.getDate() - dateOffset);
+      createdAt.setHours(8 + (i % 8), 0, 0, 0);
+      await this.appointmentRepository.update(savedAppointments[i].id, { createdAt });
+    }
+
+    this.logger.log('Seeded mock analytics data', 'AnalyticsService');
+  }
 
   async getDashboardMetrics(officeId?: string): Promise<any> {
     const today = new Date();

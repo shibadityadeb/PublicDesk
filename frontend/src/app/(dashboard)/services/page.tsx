@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Activity, Plus, Search, Clock, Tag, DollarSign, FileText } from "lucide-react";
@@ -20,9 +21,16 @@ const SERVICE_CATEGORIES = [
 ];
 
 export default function ServicesPage() {
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [filterOffice, setFilterOffice] = useState("");
+  const [filterOffice, setFilterOffice] = useState(searchParams.get("officeId") ?? "");
+
+  // Sync URL param changes
+  useEffect(() => {
+    const id = searchParams.get("officeId");
+    if (id) setFilterOffice(id);
+  }, [searchParams]);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({
     name: "", description: "", category: SERVICE_CATEGORIES[0],

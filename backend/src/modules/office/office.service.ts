@@ -11,7 +11,8 @@ import { Counter } from './entities/counter.entity';
 import { CreateOfficeDto, UpdateOfficeDto, CreateCounterDto, UpdateCounterDto } from './dto';
 import { AppLoggerService } from '@common/logger/logger.service';
 import { PaginationDto, PaginatedResponse } from '@common/dto';
-import { CounterStatus, OfficeStatus } from '@common/enums';
+import { CounterStatus } from '@common/enums';
+import { OfficeStatus } from '@common/enums';
 
 @Injectable()
 export class OfficeService implements OnModuleInit {

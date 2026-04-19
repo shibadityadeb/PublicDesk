@@ -13,6 +13,7 @@ import { AppLoggerService } from '@common/logger/logger.service';
 import { PaginationDto, PaginatedResponse } from '@common/dto';
 import { TokenStatus, Priority, UserRole } from '@common/enums';
 import { User } from '@modules/user/entities/user.entity';
+import { QueueGateway } from '../../gateways/queue.gateway';
 
 @Injectable()
 export class TokenService {
@@ -20,6 +21,7 @@ export class TokenService {
     @InjectRepository(Token)
     private readonly tokenRepository: Repository<Token>,
     private readonly logger: AppLoggerService,
+    private readonly queueGateway: QueueGateway,
   ) {}
 
   private getPriorityPrefix(priority: Priority): string {
@@ -86,6 +88,10 @@ export class TokenService {
 
     await this.tokenRepository.save(token);
     this.logger.log(`Token ${tokenNumber} generated for citizen ${citizenId}`, 'TokenService');
+
+    // Notify office subscribers a new token joined
+    this.queueGateway.emitQueueUpdate(dto.officeId, { action: 'token_generated' });
+
     return token;
   }
 
@@ -178,6 +184,16 @@ export class TokenService {
     await this.tokenRepository.save(nextToken);
 
     this.logger.log(`Token ${nextToken.tokenNumber} called at counter ${dto.counterNumber}`, 'TokenService');
+
+    // Emit real-time events
+    this.queueGateway.emitTokenCalled(officeId, {
+      tokenId: nextToken.id,
+      tokenNumber: nextToken.tokenNumber,
+      counterNumber: dto.counterNumber,
+      citizenId: nextToken.citizenId,
+    });
+    this.queueGateway.emitQueueUpdate(officeId, { action: 'token_called' });
+
     return nextToken;
   }
 
@@ -213,6 +229,11 @@ export class TokenService {
 
     await this.tokenRepository.save(token);
     this.logger.log(`Token ${token.tokenNumber} completed`, 'TokenService');
+
+    // Emit real-time events
+    this.queueGateway.emitTokenCompleted(token.officeId, token.id);
+    this.queueGateway.emitQueueUpdate(token.officeId, { action: 'token_completed' });
+
     return token;
   }
 

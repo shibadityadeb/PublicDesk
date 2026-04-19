@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { officesApi, servicesApi, appointmentsApi } from "@/lib/api";
 import { Office, Service } from "@/types";
-import { formatTime } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 const STEPS = ["Office", "Service", "Schedule", "Confirm", "Done"];

@@ -19,7 +19,7 @@ interface Options {
 
 export function useQueueSocket({ officeId, onTokenCalled: onCalled }: Options) {
   const queryClient = useQueryClient();
-  const { setQueueStats, setIsConnected } = useQueueStore();
+  const { setQueueStats, setConnected } = useQueueStore();
   const { addNotification } = useAppStore();
   const connectedRef = useRef(false);
 
@@ -28,7 +28,7 @@ export function useQueueSocket({ officeId, onTokenCalled: onCalled }: Options) {
 
     const socket = connectSocket();
     subscribeToOffice(officeId);
-    setIsConnected(true);
+    setConnected(true);
     connectedRef.current = true;
 
     const unsubUpdate = onQueueUpdate(() => {
@@ -60,7 +60,7 @@ export function useQueueSocket({ officeId, onTokenCalled: onCalled }: Options) {
       unsubCalled();
       unsubStats();
       unsubCompleted();
-      setIsConnected(false);
+      setConnected(false);
       connectedRef.current = false;
     };
   }, [officeId]);

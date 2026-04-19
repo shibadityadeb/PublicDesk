@@ -40,10 +40,12 @@ export class AppointmentController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Get all appointments (admin)' })
-  async findAll(@Query() pagination: PaginationDto) {
-    const result = await this.appointmentService.findAll(pagination);
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.SUPER_ADMIN, UserRole.CITIZEN)
+  @ApiOperation({ summary: 'Get appointments (admin: all, citizen: own)' })
+  async findAll(@CurrentUser() user: User, @Query() pagination: PaginationDto) {
+    const result = user.role === UserRole.CITIZEN
+      ? await this.appointmentService.findByCitizen(user.id, pagination)
+      : await this.appointmentService.findAll(pagination);
     return ApiResponse.success('Appointments retrieved successfully', result);
   }
 
